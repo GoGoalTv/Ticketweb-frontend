@@ -6,6 +6,7 @@ import {
   TicketTier,
   EventUpdate,
 } from "./schema/eventTied";
+import { ReservationItem, ReservationResponse } from "./schema/orderTied";
 import { toast } from "@/lib/store/toastStore";
 
 const API_URL = "http://localhost:8005/api/v1";
@@ -104,18 +105,6 @@ export const verifyPayment = async (reference: string) => {
 };
 
 export type PublicEvent = Event;
-
-export interface ReservationItem {
-  tier_id: string;
-  quantity: number;
-}
-
-export interface ReservationResponse {
-  reservation_id: string;
-  expires_at: string;
-  total_amount: number;
-  items: unknown[];
-}
 
 export const getMyEvents = async (): Promise<Event[]> => {
   const token = localStorage.getItem("token");
