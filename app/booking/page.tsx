@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { BookingCanvas } from "./_components/BookingCanvas";
 import { BookingSummary } from "./_components/BookingSummary";
-import { getPublicEvents, createReservation, checkoutOrder, Event, TicketTier } from "@/lib/api";
+import { getPublicEvents, createReservation, checkoutOrder} from "@/lib/api";
+import { Event, TicketTier } from "@/lib/schema/eventTied";
 import { useRouter } from "next/navigation";
 
 export default function BookingPage() {
@@ -70,12 +71,12 @@ export default function BookingPage() {
       const guestEmail = `guest_${Date.now()}@example.com`;
       const guestName = "Guest User";
       
-      const order = await checkoutOrder(reservation.reservation_id, guestEmail, guestName);
+      // const order = await checkoutOrder(reservation.reservation_id, guestEmail, guestName);
 
       // 3. Redirect to Payment
-      if (order.authorization_url) {
-        window.location.href = order.authorization_url;
-      }
+      // if (order.authorization_url) {
+      //   window.location.href = order.authorization_url;
+      // }
     } catch (error) {
        console.error("Checkout failed", error);
        alert("Checkout failed. Please try again.");

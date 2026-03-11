@@ -167,6 +167,7 @@ export default function StepBasics() {
       start_time: `${data.startDate}T${startH.toString().padStart(2, "0")}:${data.startMinute}:00`,
       end_time: `${data.endDate}T${endH.toString().padStart(2, "0")}:${data.endMinute}:00`,
       banner_image_url: "",
+      image_url: ""
     };
   };
 
