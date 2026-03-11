@@ -1,123 +1,15 @@
-"use client";
+import { Metadata } from "next";
+import DashboardClientLayout from "./DashboardClientLayout";
 
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import {
-  LayoutDashboard,
-  CalendarPlus,
-  LogOut,
-  Ticket,
-  Settings,
-  Wallet,
-} from "lucide-react";
-import { useAuth } from "@/app/context/AuthContext";
-import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { motion } from "framer-motion";
-import { useEffect } from "react";
+export const metadata: Metadata = {
+  title: "Dashboard",
+  description: "Manage your events, wallet, and account settings securely.",
+};
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
-  const router = useRouter();
-  const { logout, isAuthenticated, loading } = useAuth();
-
-  useEffect(() => {
-    if (!loading && !isAuthenticated) {
-      router.replace("/auth/login");
-    }
-  }, [loading, isAuthenticated, router]);
-
-  const handleLogout = () => {
-    logout();
-  };
-
-  const navItems = [
-    { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Events", href: "/dashboard/events", icon: Ticket },
-    { name: "Wallet", href: "/dashboard/wallet", icon: Wallet },
-    {
-      name: "Create Event",
-      href: "/dashboard/events/create",
-      icon: CalendarPlus,
-    },
-    { name: "Settings", href: "/dashboard/settings", icon: Settings },
-  ];
-
-  return (
-    <div className="min-h-screen bg-[#0A0A0A] flex text-neutral-400 font-sans selection:bg-primary/30">
-      {/* Sidebar - Glassmorphic */}
-      <aside className="w-72 hidden md:flex flex-col border-r border-white/5 bg-black/50 backdrop-blur-xl relative z-50">
-        <div className="h-20 flex items-center px-8 border-b border-white/5">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center mr-3 shadow-[0_0_15px_rgba(251,45,0,0.3)]">
-            <Ticket className="w-4 h-4 text-white" />
-          </div>
-          <span className="text-lg font-bold text-white tracking-tight">
-            Ticket<span className="text-primary">web</span>
-          </span>
-        </div>
-
-        <nav className="flex-1 px-4 py-8 space-y-1">
-          <p className="px-4 text-xs font-semibold text-neutral-600 uppercase tracking-widest mb-4">
-            Menu
-          </p>
-          {navItems.map((item) => {
-            const isActive =
-              pathname === item.href ||
-              (pathname.startsWith(item.href) && item.href !== "/dashboard");
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className="block relative group"
-              >
-                {isActive && (
-                  <motion.div
-                    layoutId="activeNav"
-                    className="absolute inset-0 bg-primary/10 rounded-xl"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                  />
-                )}
-                <div
-                  className={`relative flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-colors ${
-                    isActive
-                      ? "text-white"
-                      : "text-neutral-500 hover:text-white hover:bg-white/5"
-                  }`}
-                >
-                  <item.icon
-                    className={`mr-3 h-5 w-5 ${isActive ? "text-primary" : "text-neutral-500 group-hover:text-white"}`}
-                  />
-                  {item.name}
-                </div>
-              </Link>
-            );
-          })}
-        </nav>
-
-        <div className="p-4 border-t border-white/5">
-          <button
-            onClick={handleLogout}
-            className="flex items-center w-full px-4 py-3 text-sm font-medium text-neutral-500 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all group"
-          >
-            <LogOut className="mr-3 h-5 w-5 group-hover:text-red-500" />
-            Sign Out
-          </button>
-        </div>
-      </aside>
-
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 bg-[#0A0A0A] relative">
-        <DashboardHeader />
-
-        <main className="flex-1 overflow-y-auto p-8 relative z-10 scrollbar-hide">
-          {children}
-        </main>
-      </div>
-    </div>
-  );
+  return <DashboardClientLayout>{children}</DashboardClientLayout>;
 }
