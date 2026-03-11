@@ -29,7 +29,7 @@ function centerAspectCrop(
 }
 
 export default function StepMedia() {
-  const { bannerImageUrl, setBannerImage, setStep, eventId } =
+  const { bannerImageUrl, eventImageUrl, setBannerImage, setEventImage, setStep, eventId } =
     useEventBuilderStore();
 
   // State for Cropping
@@ -39,61 +39,24 @@ export default function StepMedia() {
   const [minCropDims, setMinCropDims] = useState({ width: 0, height: 0 });
   const imgRef = useRef<HTMLImageElement>(null);
   const [showCropModal, setShowCropModal] = useState(false);
+  const [cropType, setCropType] = useState<"banner" | "portrait">("banner");
+  const [portraitAspect, setPortraitAspect] = useState<number>(4/5);
 
   const [isUploading, setIsUploading] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
+  const [uploadingField, setUploadingField] = useState<"banner" | "portrait" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const portraitFileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFile = async (file: File) => {
-    setError(null);
-    if (!file.type.startsWith("image/")) {
-      setError("Please select an image file");
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      setError("File size should be less than 5MB");
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      return;
-    }
-
-    setIsUploading(true);
-
-    try {
-      if (!eventId) throw new Error("No Event ID found");
-      const data = await uploadImage(eventId, file);
-
-      setBannerImage(data.banner_image_url);
-    } catch (err) {
-      setError("Failed to upload image. Please try again.");
-    } finally {
-      setIsUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }
+  const clearImage = (type: "banner" | "portrait") => {
+    if (type === "banner") setBannerImage("");
+    else setEventImage("");
   };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    setError(null);
-
-    const file = e.dataTransfer.files[0];
-    if (file) handleFile(file);
-  };
-
-  const clearImage = () => {
-    setBannerImage("");
-
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
-
-  const imageUrl = bannerImageUrl || null;
 
   // Initial file selection
-  const onSelectFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onSelectFile = (e: React.ChangeEvent<HTMLInputElement>, type: "banner" | "portrait") => {
     setError(null);
+    setCropType(type);
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
       const reader = new FileReader();
@@ -103,7 +66,7 @@ export default function StepMedia() {
       });
       reader.readAsDataURL(file);
     }
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    e.target.value = "";
   };
 
   // Logic to generate the cropped blob and upload
@@ -113,8 +76,8 @@ export default function StepMedia() {
     const canvas = document.createElement("canvas");
     const scaleX = imgRef.current.naturalWidth / imgRef.current.width;
     const scaleY = imgRef.current.naturalHeight / imgRef.current.height;
-    canvas.width = completedCrop.width;
-    canvas.height = completedCrop.height;
+    canvas.width = completedCrop.width * scaleX;
+    canvas.height = completedCrop.height * scaleY;
     const ctx = canvas.getContext("2d");
 
     if (ctx) {
@@ -126,43 +89,40 @@ export default function StepMedia() {
         completedCrop.height * scaleY,
         0,
         0,
-        completedCrop.width,
-        completedCrop.height,
+        canvas.width,
+        canvas.height,
       );
 
       canvas.toBlob(async (blob) => {
         if (!blob) return;
 
         setIsUploading(true);
+        setUploadingField(cropType);
         setShowCropModal(false);
         try {
           if (!eventId) throw new Error("No event ID to upload to.");
-          const data = await uploadImage(eventId, blob);
-          setBannerImage(data.banner_image_url);
+          const fieldName = cropType === "banner" ? "banner_image" : "event_image";
+          const data = await uploadImage(eventId, blob, fieldName);
+          if (cropType === "banner") {
+            setBannerImage(data.banner_image_url);
+          } else {
+            setEventImage(data.image_url);
+          }
         } catch (err) {
           setError("Upload failed");
         } finally {
           setIsUploading(false);
+          setUploadingField(null);
         }
-      }, "image/jpeg");
+      }, "image/jpeg", 0.9);
     }
   };
 
   function onImageLoad(e: React.SyntheticEvent<HTMLImageElement>) {
     const { width, height, naturalWidth, naturalHeight } = e.currentTarget;
+    const aspect = cropType === "banner" ? 16 / 9 : portraitAspect;
 
-    if (naturalWidth < 1280 || naturalHeight < 720) {
-      setShowCropModal(false);
-      setError("Image is too small. Minimum dimensions are 1280x720px.");
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      return;
-    }
-
-    const cssMinWidth = (1280 / naturalWidth) * width;
-    const cssMinHeight = (720 / naturalHeight) * height;
-    setMinCropDims({ width: cssMinWidth, height: cssMinHeight });
-
-    setCrop(centerAspectCrop(width, height, 16 / 9));
+    setCrop(centerAspectCrop(width, height, aspect));
   }
 
   return (
@@ -170,152 +130,93 @@ export default function StepMedia() {
       <div className="p-8 relative overflow-hidden">
         <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-orange-500/10 blur-3xl pointer-events-none" />
 
-        <div className="relative">
+        <div className="relative space-y-8">
           <FormSection title="Event Media">
             <p className="text-white/30 text-sm mb-6">
-              Upload a banner image that captures the vibe.
+              Upload a banner image (16:9) for the event page and a portrait image (4:5 or 9:16) for lists.
             </p>
 
-            {/* Upload Zone */}
-            <div className="mb-6">
-              {!imageUrl ? (
-                <div
-                  onDragOver={(e) => {
-                    e.preventDefault();
-
-                    setIsDragging(true);
-                  }}
-                  onDragLeave={() => setIsDragging(false)}
-                  onDrop={handleDrop}
-                  onClick={() => fileInputRef.current?.click()}
-                  className="relative rounded-xl overflow-hidden cursor-pointer transition-all duration-300 flex flex-col items-center justify-center gap-4 py-16"
-                  style={{
-                    border: `2px dashed ${isDragging ? "#f97316" : "rgba(255,255,255,0.12)"}`,
-
-                    background: isDragging
-                      ? "rgba(249,115,22,0.05)"
-                      : isUploading
-                        ? "rgba(255,255,255,0.02)"
-                        : "rgba(255,255,255,0.02)",
-
-                    boxShadow: isDragging
-                      ? "0 0 30px rgba(249,115,22,0.15)"
-                      : "none",
-                  }}
-                >
-                  {isUploading ? (
-                    <>
-                      <div
-                        className="w-14 h-14 rounded-full flex items-center justify-center"
-                        style={{ background: "rgba(249,115,22,0.1)" }}
-                      >
-                        <Loader2 className="w-7 h-7 text-orange-400 animate-spin" />
-                      </div>
-
-                      <div className="text-center">
-                        <p className="text-white/60 font-semibold text-sm">
-                          Uploading your banner...
-                        </p>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div
-                        className="w-14 h-14 rounded-full flex items-center justify-center transition-all"
-                        style={{
-                          background: isDragging
-                            ? "rgba(249,115,22,0.2)"
-                            : "rgba(255,255,255,0.05)",
-                        }}
-                      >
-                        <Upload
-                          className="w-6 h-6"
-                          style={{
-                            color: isDragging
-                              ? "#f97316"
-                              : "rgba(255,255,255,0.3)",
-                          }}
-                        />
-                      </div>
-
-                      <div className="text-center">
-                        <p className="font-bold text-sm text-white/70">
-                          {isDragging
-                            ? "Drop it here!"
-                            : "Click or drag to upload"}
-                        </p>
-
-                        <p className="text-white/30 text-xs mt-1">
-                          JPG, PNG, WebP — max 5MB
-                        </p>
-                      </div>
-                    </>
-                  )}
-
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={onSelectFile}
-                    className="hidden"
-                    disabled={isUploading}
-                  />
-                </div>
-              ) : (
-                <div
-                  className="relative rounded-xl overflow-hidden group"
-                  style={{ border: "1px solid rgba(255,255,255,0.1)" }}
-                >
-                  <img
-                    src={imageUrl}
-                    alt="Event Banner"
-                    className="w-full h-full object-cover aspect-video"
-                  />
-
-                  {/* Overlay */}
-
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center">
-                    <button
-                      onClick={clearImage}
-                      className="opacity-0 group-hover:opacity-100 transition-all flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm text-white"
-                      style={{
-                        background: "rgba(239,68,68,0.8)",
-
-                        backdropFilter: "blur(10px)",
-                      }}
-                    >
-                      <X className="w-4 h-4" /> Remove
-                    </button>
-                  </div>
-
-                  {/* Success badge */}
-
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* BANNER SECTION */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-widest text-white/40 mb-3">Banner Image (16:9)</label>
+                {!bannerImageUrl ? (
                   <div
-                    className="absolute top-3 left-3 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
-                    style={{
-                      background: "rgba(0,0,0,0.6)",
-
-                      backdropFilter: "blur(10px)",
-
-                      color: "#4ade80",
-                    }}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="relative rounded-xl overflow-hidden cursor-pointer transition-all duration-300 flex flex-col items-center justify-center gap-4 py-12 border-2 border-dashed border-white/10 hover:border-orange-500/50 bg-white/[0.02]"
                   >
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" />
-                    Banner uploaded
+                    {uploadingField === "banner" ? (
+                      <Loader2 className="w-6 h-6 text-orange-400 animate-spin" />
+                    ) : (
+                      <>
+                        <Upload className="w-5 h-5 text-white/30" />
+                        <div className="text-center">
+                          <p className="font-bold text-xs text-white/70">Upload Banner</p>
+                          <p className="text-white/30 text-[10px] mt-1">16:9 — Recommended</p>
+                        </div>
+                      </>
+                    )}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => onSelectFile(e, "banner")}
+                      className="hidden"
+                    />
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="relative rounded-xl overflow-hidden group border border-white/10 aspect-video">
+                    <img src={bannerImageUrl} className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center">
+                      <button onClick={() => clearImage("banner")} className="px-3 py-1.5 bg-red-500/80 rounded-lg text-[10px] font-bold">Remove</button>
+                    </div>
+                  </div>
+                )}
+              </div>
 
-              {error && (
-                <p className="text-orange-400 text-xs mt-2 font-medium">
-                  {error}
-                </p>
-              )}
+              {/* PORTRAIT SECTION */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-widest text-white/40 mb-3">Portrait Image (4:5 / 9:16)</label>
+                {!eventImageUrl ? (
+                  <div
+                    onClick={() => portraitFileInputRef.current?.click()}
+                    className="relative rounded-xl overflow-hidden cursor-pointer transition-all duration-300 flex flex-col items-center justify-center gap-4 py-12 border-2 border-dashed border-white/10 hover:border-orange-500/50 bg-white/[0.02]"
+                  >
+                    {uploadingField === "portrait" ? (
+                      <Loader2 className="w-6 h-6 text-orange-400 animate-spin" />
+                    ) : (
+                      <>
+                        <Upload className="w-5 h-5 text-white/30" />
+                        <div className="text-center">
+                          <p className="font-bold text-xs text-white/70">Upload Portrait</p>
+                          <p className="text-white/30 text-[10px] mt-1">For mobile & lists</p>
+                        </div>
+                      </>
+                    )}
+                    <input
+                      ref={portraitFileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => onSelectFile(e, "portrait")}
+                      className="hidden"
+                    />
+                  </div>
+                ) : (
+                  <div className="relative rounded-xl overflow-hidden group border border-white/10 h-48 mx-auto aspect-[4/5]">
+                    <img src={eventImageUrl} className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center">
+                      <button onClick={() => clearImage("portrait")} className="px-3 py-1.5 bg-red-500/80 rounded-lg text-[10px] font-bold">Remove</button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
+
+            {error && <p className="text-orange-400 text-xs mt-4 font-medium">{error}</p>}
           </FormSection>
         </div>
 
-        <div className="flex justify-between pt-2">
+        <div className="flex justify-between mt-12">
           <button
             onClick={() => setStep(2)}
             className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white/50 hover:text-white hover:bg-white/5 transition-all"
@@ -325,7 +226,7 @@ export default function StepMedia() {
 
           <button
             onClick={() => setStep(4)}
-            className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-all hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] bg-orange-700"
+            className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-all hover:opacity-90 hover:scale-[1.02] bg-orange-700"
           >
             Next: Preview <ArrowRight className="w-4 h-4" />
           </button>
@@ -337,18 +238,31 @@ export default function StepMedia() {
         <Modal
           isOpen={showCropModal}
           onClose={() => setShowCropModal(false)}
-          title="Crop Image"
-          description="Upload a 1280 x 720 (16:9) image for a better result"
+          title={`Crop ${cropType === "banner" ? "Banner" : "Portrait Image"}`}
         >
           <div className="flex flex-col gap-4 max-w-full">
+            {cropType === "portrait" && (
+                <div className="flex gap-4 mb-2">
+                    <button 
+                        onClick={() => setPortraitAspect(4/5)}
+                        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${portraitAspect === 4/5 ? 'bg-orange-500 text-white' : 'bg-white/5 text-white/40'}`}
+                    >
+                        4:5 Ratio
+                    </button>
+                    <button 
+                        onClick={() => setPortraitAspect(9/16)}
+                        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${portraitAspect === 9/16 ? 'bg-orange-500 text-white' : 'bg-white/5 text-white/40'}`}
+                    >
+                        9:16 Ratio
+                    </button>
+                </div>
+            )}
             <div className="max-h-[60vh] overflow-auto rounded-lg px-2">
               <ReactCrop
                 crop={crop}
                 onChange={(c) => setCrop(c)}
                 onComplete={(c) => setCompletedCrop(c)}
-                aspect={16 / 9}
-                minWidth={minCropDims.width}
-                minHeight={minCropDims.height}
+                aspect={cropType === "banner" ? 16 / 9 : portraitAspect}
                 className="w-full"
               >
                 <img
@@ -361,18 +275,20 @@ export default function StepMedia() {
               </ReactCrop>
             </div>
 
-            <div className="flex justify-end gap-3">
+            <div className="flex justify-end gap-3 p-2">
               <button
                 onClick={() => setShowCropModal(false)}
-                className="px-4 py-2 text-white/50 font-bold cursor-pointer"
+                className="px-4 py-2 text-white/50 font-bold"
               >
                 Cancel
               </button>
               <button
                 onClick={getCroppedImg}
-                className="px-6 py-2 bg-orange-700 rounded-xl font-bold text-white flex items-center gap-2 cursor-pointer"
+                disabled={isUploading}
+                className="px-6 py-2 bg-orange-700 rounded-xl font-bold text-white flex items-center gap-2"
               >
-                <Check className="w-4 h-4" /> Apply & Upload
+                {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                Apply & Upload
               </button>
             </div>
           </div>

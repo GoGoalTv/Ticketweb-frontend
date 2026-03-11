@@ -50,7 +50,9 @@ function SkeletonCard() {
 /* ─── Featured Event Card (for trending strip) ─── */
 function FeaturedEventCard({ event }: { event: Event }) {
   const date = new Date(event.start_time);
-  const month = date.toLocaleString(undefined, { month: "short" }).toUpperCase();
+  const month = date
+    .toLocaleString(undefined, { month: "short" })
+    .toUpperCase();
   const day = date.getDate();
 
   return (
@@ -79,7 +81,7 @@ function FeaturedEventCard({ event }: { event: Event }) {
             <p className="text-xs font-bold text-primary/80 mt-1">
               From ₦
               {Math.min(
-                ...event.ticket_tiers.map((t) => t.base_price)
+                ...event.ticket_tiers.map((t) => t.base_price),
               ).toLocaleString()}
             </p>
           )}
@@ -129,13 +131,13 @@ function EventsContent() {
       result = result.filter(
         (e) =>
           e.title.toLowerCase().includes(q) ||
-          e.location?.toLowerCase().includes(q)
+          e.location?.toLowerCase().includes(q),
       );
     }
 
     if (activeLocation !== "All Locations") {
       result = result.filter((e) =>
-        e.location?.toLowerCase().includes(activeLocation.toLowerCase())
+        e.location?.toLowerCase().includes(activeLocation.toLowerCase()),
       );
     }
 
@@ -281,10 +283,7 @@ function EventsContent() {
               {loading ? (
                 <div className="space-y-3">
                   {[1, 2, 3].map((i) => (
-                    <div
-                      key={i}
-                      className="animate-pulse flex gap-3 p-3"
-                    >
+                    <div key={i} className="animate-pulse flex gap-3 p-3">
                       <div className="w-14 h-14 rounded-xl bg-white/5" />
                       <div className="flex-1 space-y-2 py-1">
                         <div className="h-3 w-3/4 bg-white/5 rounded-full" />
@@ -332,9 +331,7 @@ function EventsContent() {
                   </span>
                 )}
                 {search && (
-                  <span className="text-xs text-white/30">
-                    for "{search}"
-                  </span>
+                  <span className="text-xs text-white/30">for "{search}"</span>
                 )}
               </div>
 
@@ -389,7 +386,7 @@ function EventsContent() {
                   hidden: {},
                   visible: { transition: { staggerChildren: 0.04 } },
                 }}
-                className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5"
+                className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4"
               >
                 {filtered.map((event) => (
                   <motion.div
@@ -409,7 +406,7 @@ function EventsContent() {
                       title={event.title}
                       date={new Date(event.start_time).toLocaleDateString(
                         undefined,
-                        { weekday: "short", month: "short", day: "numeric" }
+                        { weekday: "short", month: "short", day: "numeric" },
                       )}
                       image={
                         event.banner_image_url ||
@@ -418,7 +415,7 @@ function EventsContent() {
                       price={
                         event.ticket_tiers && event.ticket_tiers.length > 0
                           ? `From ₦${Math.min(
-                              ...event.ticket_tiers.map((t) => t.base_price)
+                              ...event.ticket_tiers.map((t) => t.base_price),
                             ).toLocaleString()}`
                           : "Free"
                       }

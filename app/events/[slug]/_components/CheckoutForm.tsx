@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { checkoutOrder } from "@/lib/api";
+import { checkoutOrder, releaseReservation } from "@/lib/api";
 import { ReservationResponse } from "@/lib/schema/orderTied";
 import { Loader2, Timer, CreditCard, ShieldCheck, Mail, User, Info, ArrowLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -18,6 +18,7 @@ export default function CheckoutForm({
 }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [sendToAttendees, setSendToAttendees] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState<number>(0);
@@ -53,6 +54,7 @@ export default function CheckoutForm({
     e.preventDefault();
     if (timeLeft <= 0) {
       setError("Reservation expired. Please select tickets again.");
+      releaseReservation(reservation.reservation_id)
       return;
     }
     
@@ -64,6 +66,7 @@ export default function CheckoutForm({
         name,
         email,
         paymentToken: "paystack",
+        send_to_attendees: sendToAttendees === true
       });
 
       if (response.authorization_url) {
@@ -143,6 +146,49 @@ export default function CheckoutForm({
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
+
+          <div className="p-6 rounded-2xl bg-white/[0.03] border border-white/10 space-y-4">
+            <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Ticket Delivery Preference</p>
+            <p className="text-sm text-white/80 leading-relaxed">How should we deliver the digital tickets?</p>
+            
+            <div className="grid grid-cols-1 gap-3">
+              <button
+                type="button"
+                onClick={() => setSendToAttendees(true)}
+                className={`flex items-center gap-4 p-4 rounded-xl border transition-all text-left ${
+                  sendToAttendees === true 
+                    ? "bg-primary/10 border-primary text-white" 
+                    : "bg-black/20 border-white/5 text-white/40 hover:border-white/20"
+                }`}
+              >
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${sendToAttendees === true ? "border-primary" : "border-white/20"}`}>
+                  {sendToAttendees === true && <div className="w-2.5 h-2.5 rounded-full bg-primary" />}
+                </div>
+                <div className="space-y-0.5">
+                  <p className="text-sm font-bold">Individual Delivery</p>
+                  <p className="text-[10px] opacity-60">Send each ticket to its respective attendee's email</p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSendToAttendees(false)}
+                className={`flex items-center gap-4 p-4 rounded-xl border transition-all text-left ${
+                  sendToAttendees === false 
+                    ? "bg-primary/10 border-primary text-white" 
+                    : "bg-black/20 border-white/5 text-white/40 hover:border-white/20"
+                }`}
+              >
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${sendToAttendees === false ? "border-primary" : "border-white/20"}`}>
+                  {sendToAttendees === false && <div className="w-2.5 h-2.5 rounded-full bg-primary" />}
+                </div>
+                <div className="space-y-0.5">
+                  <p className="text-sm font-bold">Bundle Delivery (Me only)</p>
+                  <p className="text-[10px] opacity-60">Send all tickets to my email only</p>
+                </div>
+              </button>
+            </div>
+          </div>
         </div>
 
         {error && (
@@ -155,8 +201,8 @@ export default function CheckoutForm({
         <div className="flex flex-col gap-4 pt-2">
           <button
             type="submit"
-            disabled={loading || isExpired || !name || !email}
-            className="w-full bg-primary hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white py-5 rounded-2xl font-black tracking-widest text-sm transition-all duration-300 shadow-[0_8px_30px_rgba(59,130,246,0.3)] flex items-center justify-center gap-3 active:scale-[0.98]"
+            disabled={loading || isExpired || !name || !email || sendToAttendees === null}
+            className="w-full bg-primary border border-primary hover:bg-orange-700  disabled:opacity-50 disabled:cursor-not-allowed text-white py-5 rounded-2xl font-black tracking-widest text-sm transition-all duration-300 flex items-center justify-center gap-3 active:scale-[0.98]"
           >
             {loading ? (
               <Loader2 className="w-5 h-5 animate-spin" />

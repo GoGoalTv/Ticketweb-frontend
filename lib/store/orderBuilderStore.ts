@@ -24,6 +24,7 @@ function buildAttendeeSlots(
             table_id,
             table_number: t + 1,
             seat_number: s + 1,
+            allow_combined_names: tier.allow_combined_names,
           });
         }
       }

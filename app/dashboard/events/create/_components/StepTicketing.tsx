@@ -29,6 +29,7 @@ const ticketTierSchema = z
     seatsPerTable: z.number().optional(),
     row_count: z.number().optional(),
     seats_per_row: z.number().optional(),
+    allowCombinedNames: z.boolean().optional(),
   })
   .superRefine((data, ctx) => {
     if (data.type === TicketType.TABLE) {
@@ -99,6 +100,7 @@ export default function StepTicketing() {
       price: 0,
       quantity: 100,
       seatsPerTable: 5,
+      allowCombinedNames: false,
     },
   });
 
@@ -123,6 +125,7 @@ export default function StepTicketing() {
       base_price: Math.round(data.price * 100),
       quantity_available: data.quantity,
       config: config,
+      allow_combined_names: data.allowCombinedNames,
     });
 
     // Reset only the name and price, keep type for convenience
@@ -250,7 +253,6 @@ export default function StepTicketing() {
                 />
               </div>
             )}
-
             {selectedType === TicketType.ASSIGNED_SEATING && (
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -271,6 +273,21 @@ export default function StepTicketing() {
                 </div>
               </div>
             )}
+
+            <div className="flex items-center gap-3 p-4 rounded-xl border border-white/10 bg-white/[0.02]">
+              <div className="flex-1">
+                <p className="text-sm font-bold text-white">Allow Combined Names</p>
+                <p className="text-xs text-white/40">Enable "use my name for all seats" toggle for this tier</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  {...register("allowCombinedNames")}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
+              </label>
+            </div>
 
             <button
               disabled={isSubmitting}

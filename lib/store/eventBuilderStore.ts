@@ -8,6 +8,7 @@ export interface TicketTier {
   base_price: number; // in cents
   quantity_available: number;
   config?: TicketConfig;
+  allow_combined_names?: boolean;
 }
 
 interface EventBuilderState {
@@ -25,6 +26,7 @@ interface EventBuilderState {
   deletedTicketTierIds: string[]; // Track existing tickets the user removes
   // Media
   bannerImageUrl: string;
+  eventImageUrl: string;
   eventId?: string;
   isEditMode: boolean;
 
@@ -35,6 +37,7 @@ interface EventBuilderState {
   updateTicketTier: (index: number, tier: TicketTier) => void;
   removeTicketTier: (index: number) => void;
   setBannerImage: (url: string) => void;
+  setEventImage: (url: string) => void;
   setEventId: (id: string) => void;
   loadEventData: (event: Event) => void;
   reset: () => void;
@@ -52,6 +55,7 @@ export const useEventBuilderStore = create<EventBuilderState>((set) => ({
   ticketTiers: [],
   deletedTicketTierIds: [],
   bannerImageUrl: "",
+  eventImageUrl: "",
   eventId: "",
   isEditMode: false,
 
@@ -78,8 +82,9 @@ export const useEventBuilderStore = create<EventBuilderState>((set) => ({
       };
     }),
   setBannerImage: (url) => set({ bannerImageUrl: url }),
+  setEventImage: (url) => set({ eventImageUrl: url }),
   setEventId: (id) => set({ eventId: id }),
-  loadEventData: (event) => 
+  loadEventData: (event) =>
     set({
       step: 1,
       title: event.title || "",
@@ -90,16 +95,20 @@ export const useEventBuilderStore = create<EventBuilderState>((set) => ({
       startTime: event.start_time || "",
       endTime: event.end_time || "",
       bannerImageUrl: event.banner_image_url || "",
+      eventImageUrl: event.image_url || "",
       eventId: event.id,
       isEditMode: true,
-      ticketTiers: event.ticket_tiers ? event.ticket_tiers.map(t => ({
-        id: t.id,
-        name: t.name,
-        type: t.type,
-        base_price: t.base_price,
-        quantity_available: t.quantity_available,
-        config: t.config
-      })) : [],
+      ticketTiers: event.ticket_tiers
+        ? event.ticket_tiers.map((t) => ({
+            id: t.id,
+            name: t.name,
+            type: t.type,
+            base_price: t.base_price,
+            quantity_available: t.quantity_available,
+            config: t.config,
+            allow_combined_names: t.allow_combined_names,
+          }))
+        : [],
       deletedTicketTierIds: [],
     }),
   reset: () =>
@@ -115,6 +124,7 @@ export const useEventBuilderStore = create<EventBuilderState>((set) => ({
       ticketTiers: [],
       deletedTicketTierIds: [],
       bannerImageUrl: "",
+      eventImageUrl: "",
       isEditMode: false,
     }),
 }));

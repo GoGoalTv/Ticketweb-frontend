@@ -10,6 +10,7 @@ export interface TicketTierBase {
   base_price: number;
   quantity_available: number;
   config?: TicketConfig;
+  allow_combined_names?: boolean;
 }
 
 export interface TableTicketConfig {
@@ -40,6 +41,7 @@ export interface EventBase {
   start_time: string;
   end_time: string;
   banner_image_url: string;
+  image_url: string;
 }
 
 export interface TicketTier extends TicketTierBase {

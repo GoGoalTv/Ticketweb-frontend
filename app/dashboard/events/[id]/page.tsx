@@ -20,6 +20,20 @@ interface EventStats {
     tickets_available: number;
 }
 
+interface Guest {
+    id: string;
+    attendee_name: string;
+    attendee_email: string;
+    tier: {
+        name: string;
+    };
+    seat_number?: number;
+    table_number?: number;
+    shared_attendee: boolean;
+    status: string;
+    created_at: string;
+}
+
 export default function EventStatsPage() {
   const { user, isAuthenticated, loading } = useAuth();
   const router = useRouter();
@@ -28,6 +42,7 @@ export default function EventStatsPage() {
 
   const [event, setEvent] = useState<Event | null>(null);
   const [stats, setStats] = useState<EventStats | null>(null);
+  const [guests, setGuests] = useState<Guest[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [copied, setCopied] = useState(false);
 
@@ -44,14 +59,18 @@ export default function EventStatsPage() {
             const token = localStorage.getItem('token');
             const headers = { Authorization: `Bearer ${token}` };
 
-            const [eventRes, statsRes] = await Promise.all([
+            const [eventRes, statsRes, guestsRes] = await Promise.all([
                 fetch(`http://localhost:8000/api/v1/events/${eventId}`, { headers }),
-                fetch(`http://localhost:8000/api/v1/events/${eventId}/stats`, { headers })
+                fetch(`http://localhost:8000/api/v1/events/${eventId}/stats`, { headers }),
+                fetch(`http://localhost:8000/api/v1/events/${eventId}/guestlist`, { headers })
             ]);
 
             if (eventRes.ok && statsRes.ok) {
                 setEvent(await eventRes.json());
                 setStats(await statsRes.json());
+            }
+            if (guestsRes.ok) {
+                setGuests(await guestsRes.json());
             }
         } catch (error) {
             console.error("Failed to fetch event data", error);
@@ -106,7 +125,7 @@ export default function EventStatsPage() {
                       </div>
                       <div>
                           <p className="text-sm text-gray-500">Total Revenue</p>
-                          <p className="text-2xl font-bold">${(stats.total_revenue / 100).toFixed(2)}</p>
+                          <p className="text-2xl font-bold">₦{(stats.total_revenue).toLocaleString()}</p>
                       </div>
                   </div>
               </div>
@@ -131,6 +150,64 @@ export default function EventStatsPage() {
                           <p className="text-2xl font-bold">{stats.tickets_available}</p>
                       </div>
                   </div>
+              </div>
+          </div>
+
+          <div className="bg-white overflow-hidden rounded-xl shadow-sm border border-gray-100">
+              <div className="p-6 border-b flex justify-between items-center">
+                  <h3 className="text-lg font-bold text-gray-900">Guestlist</h3>
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">{guests.length} Attendees</p>
+              </div>
+              <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                      <thead>
+                          <tr className="bg-gray-50 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                              <th className="px-6 py-4">Attendee</th>
+                              <th className="px-6 py-4">Tier</th>
+                              <th className="px-6 py-4">Seat / Table</th>
+                              <th className="px-6 py-4">Status</th>
+                          </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                          {guests.length === 0 ? (
+                              <tr>
+                                  <td colSpan={4} className="px-6 py-12 text-center text-gray-400 font-medium">
+                                      No tickets sold yet.
+                                  </td>
+                              </tr>
+                          ) : (
+                              guests.map((guest) => (
+                                  <tr key={guest.id} className="hover:bg-gray-50/50 transition-colors">
+                                      <td className="px-6 py-4">
+                                          <p className="font-bold text-gray-900">{guest.attendee_name || 'N/A'}</p>
+                                          <p className="text-xs text-gray-500">{guest.attendee_email}</p>
+                                      </td>
+                                      <td className="px-6 py-4">
+                                          <span className="text-xs font-bold px-2 py-1 bg-gray-100 rounded-lg text-gray-600">
+                                              {guest.tier.name}
+                                          </span>
+                                      </td>
+                                      <td className="px-6 py-4">
+                                          {guest.shared_attendee ? (
+                                              <span className="text-[10px] font-black px-2 py-1 bg-blue-100 text-blue-600 rounded uppercase tracking-tighter">
+                                                  COMBINED — T-{guest.table_number}
+                                              </span>
+                                          ) : (
+                                              <span className="text-sm font-medium text-gray-600">
+                                                  {guest.seat_number ? `Seat ${guest.seat_number}` : (guest.table_number ? `Table ${guest.table_number}` : '—')}
+                                              </span>
+                                          )}
+                                      </td>
+                                      <td className="px-6 py-4">
+                                          <span className="text-[10px] font-black px-2 py-1 bg-green-100 text-green-600 rounded uppercase tracking-widest">
+                                              {guest.status}
+                                          </span>
+                                      </td>
+                                  </tr>
+                              ))
+                          )}
+                      </tbody>
+                  </table>
               </div>
           </div>
 

@@ -131,30 +131,57 @@ export default function StepPreview() {
                 )}
               </div>
 
-              {/* Right: Banner */}
-              <div>
-                <p className={`${sectionTitle} ${sectionTitleColor}`}>
-                  Banner Image
-                </p>
-                {bannerUrl ? (
-                  <img
-                    src={bannerUrl}
-                    alt="Banner Preview"
-                    className="w-full h-52 object-cover rounded-xl object-top"
-                    style={{ border: "1px solid rgba(255,255,255,0.08)" }}
-                  />
-                ) : (
-                  <div
-                    className="w-full h-52 rounded-xl flex flex-col items-center justify-center gap-2"
-                    style={{
-                      background: "rgba(255,255,255,0.02)",
-                      border: "1px dashed rgba(255,255,255,0.08)",
-                    }}
-                  >
-                    <ImageIcon className="w-8 h-8 text-white/15" />
-                    <p className="text-white/20 text-xs">No banner uploaded</p>
-                  </div>
-                )}
+              {/* Right: Media Previews */}
+              <div className="space-y-6">
+                <div>
+                  <p className={`${sectionTitle} ${sectionTitleColor}`}>
+                    Banner Image (16:9)
+                  </p>
+                  {bannerUrl ? (
+                    <img
+                      src={bannerUrl}
+                      alt="Banner Preview"
+                      className="w-full h-40 object-cover rounded-xl object-top"
+                      style={{ border: "1px solid rgba(255,255,255,0.08)" }}
+                    />
+                  ) : (
+                    <div
+                      className="w-full h-40 rounded-xl flex flex-col items-center justify-center gap-2"
+                      style={{
+                        background: "rgba(255,255,255,0.02)",
+                        border: "1px dashed rgba(255,255,255,0.08)",
+                      }}
+                    >
+                      <ImageIcon className="w-8 h-8 text-white/15" />
+                      <p className="text-white/20 text-xs">No banner uploaded</p>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <p className={`${sectionTitle} ${sectionTitleColor}`}>
+                    Portrait Image (4:5 / 9:16)
+                  </p>
+                  {store.eventImageUrl ? (
+                    <img
+                      src={store.eventImageUrl}
+                      alt="Portrait Preview"
+                      className="w-32 h-40 object-cover rounded-xl mx-auto"
+                      style={{ border: "1px solid rgba(255,255,255,0.08)" }}
+                    />
+                  ) : (
+                    <div
+                      className="w-32 h-40 rounded-xl mx-auto flex flex-col items-center justify-center gap-2"
+                      style={{
+                        background: "rgba(255,255,255,0.02)",
+                        border: "1px dashed rgba(255,255,255,0.08)",
+                      }}
+                    >
+                      <ImageIcon className="w-8 h-8 text-white/15" />
+                      <p className="text-white/20 text-xs">None</p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </FormSection>

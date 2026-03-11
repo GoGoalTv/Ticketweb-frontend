@@ -9,7 +9,7 @@ import {
 import { ReservationItem, ReservationResponse } from "./schema/orderTied";
 import { toast } from "@/lib/store/toastStore";
 
-const API_URL = "http://localhost:8005/api/v1";
+const API_URL = `${process.env.API_URL}/api/v1`;
 
 export const api = axios.create({
   baseURL: API_URL,
@@ -39,12 +39,18 @@ api.interceptors.response.use(
         if (error.response.status === 401 || error.response.status === 403) {
           localStorage.removeItem("token");
           toast.error("Session expired or unauthorized. Please login again.");
-          
+
           const currentPath = window.location.pathname + window.location.search;
-          if (!currentPath.includes("/auth/login") && !currentPath.includes("/auth/register")) {
+          if (
+            !currentPath.includes("/auth/login") &&
+            !currentPath.includes("/auth/register")
+          ) {
             window.location.href = `/auth/login?_r=${encodeURIComponent(currentPath)}`;
           }
-        } else if (error.response.status >= 400 && error.config.method !== "get") {
+        } else if (
+          error.response.status >= 400 &&
+          error.config.method !== "get"
+        ) {
           // Automatically fire error toast for 400+ failing mutations
           const msg =
             error.response.data?.detail ||
@@ -86,15 +92,26 @@ export const createReservation = async (
   return response.data;
 };
 
+export const releaseReservation = async (reserve_id: string) => {
+  const response = await api.post(`/orders/release/${reserve_id}`);
+  return response.data;
+};
+
 export const checkoutOrder = async (
   reservationId: string,
-  data: { name: string; email: string; paymentToken?: string },
+  data: {
+    name: string;
+    email: string;
+    paymentToken?: string;
+    send_to_attendees?: boolean;
+  },
 ) => {
   const response = await api.post("/orders/checkout", {
     reservation_id: reservationId,
     guest_email: data.email,
     guest_name: data.name,
     payment_token: data.paymentToken,
+    send_to_attendees: data.send_to_attendees ?? false,
   });
   return response.data;
 };
@@ -121,7 +138,9 @@ export const createBulkTicketTier = async (
   event_id: string,
   tiers: TicketTierCreate[],
 ): Promise<TicketTier> => {
-  const response = await api.post(`/events/${event_id}/tiers/bulk`, {"tiers": tiers});
+  const response = await api.post(`/events/${event_id}/tiers/bulk`, {
+    tiers: tiers,
+  });
   return response.data;
 };
 
@@ -166,11 +185,15 @@ export const holdTickets = async (
   return response.data;
 };
 
-export const uploadImage = async (event_id: string, file: Blob): Promise<Event> => {
+export const uploadImage = async (
+  event_id: string,
+  file: Blob,
+  fieldName: "banner_image" | "event_image" = "banner_image",
+): Promise<Event> => {
   const formData = new FormData();
-  formData.append("banner_image", file, "banner.jpg");
+  formData.append(fieldName, file, `${fieldName.split("_")[0]}.jpg`);
   const response = await api.put(`/events/${event_id}/upload`, formData, {
-    headers: { "Content-Type": "multipart/form-data" }
+    headers: { "Content-Type": "multipart/form-data" },
   });
   return response.data;
 };
