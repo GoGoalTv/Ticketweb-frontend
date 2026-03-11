@@ -15,7 +15,7 @@ export default function SeatMap({ event, onSelectTier, selectedTierId }: SeatMap
   // Helper to find tier by name or type to map to SVG sections
   const getTierId = (sectionName: string) => {
     // Simple matching logic: find a tier that contains the section name
-    return event.ticket_tiers.find(t => 
+    return event.ticket_tiers?.find(t => 
         t.name.toLowerCase().includes(sectionName.toLowerCase()) || 
         t.type.toLowerCase().includes(sectionName.toLowerCase())
     )?.id;
