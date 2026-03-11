@@ -18,7 +18,7 @@ export default function EventDetails({ event, formattedDate, isCollapsed }: Even
           {/* Image */}
           <div className="relative w-full sm:w-48 shrink-0 aspect-[4/5] rounded-2xl overflow-hidden shadow-xl border border-white/10 group">
             <img
-              src={event.banner_image_url}
+              src={event.image_url}
               alt={event.title}
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             />

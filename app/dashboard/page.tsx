@@ -97,9 +97,9 @@ export default function DashboardPage() {
                 className="bg-white/5 rounded-2xl border border-white/5 overflow-hidden hover:border-white/10 transition-colors group"
               >
                 <div className="h-48 bg-neutral-900 relative overflow-hidden">
-                  {event.banner_image_url ? (
+                  {event.image_url ? (
                     <img
-                      src={event.banner_image_url}
+                      src={event.image_url}
                       alt={event.title}
                       className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500"
                     />

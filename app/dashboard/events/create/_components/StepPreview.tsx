@@ -16,8 +16,6 @@ import {
 } from "lucide-react";
 import FormSection from "@/components/ui/FormSection";
 
-const API_BASE_URL = "http://localhost:8000";
-
 export default function StepPreview() {
   const store = useEventBuilderStore();
   const router = useRouter();

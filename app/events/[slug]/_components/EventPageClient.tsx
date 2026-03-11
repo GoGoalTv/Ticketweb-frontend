@@ -27,7 +27,6 @@ export default function EventPageClient({
 
   return (
     <div className="min-h-screen pb-20 font-sans">
-
       {/* ── Collapsible Hero — stays in page flow, never fixed ── */}
       <section className="relative w-full">
         <motion.div
@@ -62,7 +61,6 @@ export default function EventPageClient({
           {/* Hero overlay content */}
           <div className="relative h-full max-w-7xl mx-auto px-6 md:px-12 flex flex-col justify-end pb-8">
             <div className="flex flex-col md:flex-row items-end md:items-center gap-6">
-
               {/* Thumbnail image */}
               <motion.div
                 animate={{
@@ -73,7 +71,7 @@ export default function EventPageClient({
                 className="hidden aspect-4/5 md:block shrink-0 rounded-2xl overflow-hidden shadow-2xl border border-white/10"
               >
                 <img
-                  src={event.banner_image_url}
+                  src={event.image_url}
                   alt={event.title}
                   className="w-full h-full object-cover opacity-80"
                 />
@@ -128,15 +126,17 @@ export default function EventPageClient({
                 : "w-full lg:max-w-4xl"
             }`}
           >
-            <EventDetails event={event} formattedDate={formattedDate} isCollapsed={isCollapsed} />
+            <EventDetails
+              event={event}
+              formattedDate={formattedDate}
+              isCollapsed={isCollapsed}
+            />
           </div>
 
           {/* Booking Flow — scrollable on the right when collapsed */}
           <div
             className={`transition-all duration-700 ${
-              isCollapsed
-                ? "lg:col-span-5"
-                : "w-full lg:max-w-4xl mt-16"
+              isCollapsed ? "lg:col-span-5" : "w-full lg:max-w-4xl mt-16"
             }`}
           >
             <div className="p-8 rounded-3xl relative overflow-hidden">
